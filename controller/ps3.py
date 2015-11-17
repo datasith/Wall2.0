@@ -36,6 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
 import pygame, sys, time ,os
 from pygame.locals import *
 
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 #PS3 functions and variables
 class ps3:
     joystick=0
@@ -50,8 +52,8 @@ class ps3:
         #Make the stdout buffer as 0,because of bug in Pygame which keeps on printing debug statements
         #http://stackoverflow.com/questions/107705/python-output-buffering
         sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-        
         pygame.init()
+        pygame.display.init()
         pygame.joystick.init()
         ps3.joystick = pygame.joystick.Joystick(0)
         ps3.joystick.init()
