@@ -36,7 +36,7 @@ sudo reboot
 ```
 ### Ensure that the Bluetooth adapter is available for pairing
 ```
-sudo hciconfig hci0 pscan
+sudo hciconfig hci0 up pscan
 ```
 ### Start the serive
 ```
