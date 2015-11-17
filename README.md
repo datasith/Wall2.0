@@ -9,6 +9,12 @@ sudo hciconfig hci0 up
 sudo ./sixpair
 ```
 ### Disconnect controller from USB
+```
 git clone https://github.com/falkTX/qtsixa/ (if needed)
 make
 make install
+```
+### Start sixad service
+```
+sudo sixad --start
+```
