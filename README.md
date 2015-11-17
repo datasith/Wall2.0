@@ -14,7 +14,12 @@ git clone https://github.com/falkTX/qtsixa/ (if needed)
 make
 make install
 ```
-### Start sixad service
+### Start sixad for testing
 ```
 sudo sixad --start
+```
+### Install sixad daemon
+```
+sudo update-rc.d sixad defaults
+sudo reboot
 ```
