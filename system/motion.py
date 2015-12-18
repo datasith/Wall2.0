@@ -48,10 +48,10 @@ class motion():
     def move(self,sign_x, sign_y):
         x = "x"+str(sign_x*10)    
         y = "y"+str(sign_y*10)    
+        #self.send("%")
         self.send(" ".join(["g1",x,y]))
 
     def stop(self):
-
         self.send("!")
         self.send("%")
 
