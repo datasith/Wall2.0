@@ -16,18 +16,10 @@ class motion():
                                timeout=0.1,
                                rtscts=True,
                                xonxoff=False)
-
         self.rsp=''
         self.posx=0.0
         self.posy=0.0
-
         self.positions_file = 'positions.csv'
-        with open(self.positions_file,'w') as f:
-            f.write('posx,posy\n')
-
-        self.pos_queue = Queue()
-        self.serial_proc = Process(target=self.get_response,
-                                   args=(self.pos_queue,))
 
         # Wake up grbl
         self.s.write("\r\n\r\n")
@@ -36,15 +28,36 @@ class motion():
         # set origin offset
         self.send("g92 x0 y0")
         # feedrate speed
-        self.send("f400")
+        self.send("f800")
         # relative mode 
         self.send("g91")
+
+        with open(self.positions_file,'w') as f:
+            f.write('posx,posy\n')
+
+        self.pos_queue = Queue()
+        self.serial_proc = Process(target=self.get_response,
+                                   args=(self.pos_queue,))
 
         self.serial_proc.start()
  
     def send(self, cmd): 
         print 'Sending: ' + cmd
         self.s.write(cmd + '\n') # Send g-code block to grbl
+
+    def move(self,sign_x, sign_y):
+        x = "x"+str(sign_x*10)    
+        y = "y"+str(sign_y*10)    
+        self.send(" ".join(["g1",x,y]))
+
+    def stop(self):
+
+        self.send("!")
+        self.send("%")
+
+    def disconnect(self):
+        # Close file and serial port
+        self.s.close()
 
     def get_response(self, q):
         while(1):
@@ -99,18 +112,3 @@ class motion():
                     else:
                         break
 
-    def fwd(self):
-        self.send("g1 x1 y0")
-
-    def bwd(self):
-        self.send("g1 x-1 y0")
-
-    def right(self):
-        self.send("g1 x0 y1")
-
-    def left(self):
-        self.send("g1 x0 y-1")
-
-    def disconnect(self):
-        # Close file and serial port
-        self.s.close()
