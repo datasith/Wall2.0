@@ -8,6 +8,10 @@ m=motion()
 print "Done"
 
 isMoving = False
+isRecording = False
+isPlaying = False
+isChangingMode = False
+
 while True:
     p.update()
 
@@ -18,8 +22,22 @@ while True:
                cmp(p.a_joystick_left_y,0))
         isMoving = True
         time.sleep(0.1)
-
+    elif ( p.cross ):
+        isRecording = True
+    elif ( p.circle ):
+        isPlaying = True
+    elif ( p.square ):
+        isChangingMode = True
     else:
         if isMoving:
             m.stop()
             isMoving = False
+        if isRecording:
+            m.record_current_position()
+            isRecording = False
+        if isPlaying:
+            m.playback_saved_positions()
+            isPlaying = False
+        if isChangingMode:
+            m.changeMode()
+            isChangingMode = False
