@@ -25,6 +25,10 @@ isMoving = False
 isRecording = False
 isPlaying = False
 isChangingMode = False
+isIncSpeed = False
+isDecSpeed = False
+isIncInterval = False
+isDecInterval = False
 
 while True:
     p.update()
@@ -42,6 +46,14 @@ while True:
         isPlaying = True
     elif ( p.square ):
         isChangingMode = True
+    elif ( p.up ):
+        isIncSpeed = True
+    elif ( p.down ):
+        isDecSpeed = True
+    elif ( p.right ):
+        isIncInterval = True
+    elif ( p.left ):
+        isDecInterval = True
     else:
         if isMoving:
             m.stop()
@@ -55,3 +67,15 @@ while True:
         if isChangingMode:
             m.changeMode()
             isChangingMode = False
+        if isIncSpeed:
+            m.update_feedrate(100)
+            isIncSpeed = False
+        if isDecSpeed:
+            m.update_feedrate(-100)
+            isDecSpeed = False
+        if isIncInterval:
+            m.update_interval(1)
+            isIncInterval = False
+        if isDecInterval:
+            m.update_interval(-1)
+            isDecInterval = False

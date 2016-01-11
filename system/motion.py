@@ -23,6 +23,7 @@ class motion():
         self.positions_file = 'positions.csv'
         self.mode = 'delay'
         self.sensor_pin = 3
+        self.interval = 1
         GPIO.setmode(GPIO.BOARD)
 #        GPIO.setup(self.sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(self.sensor_pin, GPIO.IN)
@@ -33,8 +34,10 @@ class motion():
         self.s.flushInput()  # Flush startup text in serial input        
         # set origin offset
         self.send("g92 x0 y0")
-        # feedrate speed
-        self.send("f100")
+
+        self.feedrate = 100
+        self.update_feedrate(0)
+
         # relative mode 
         self.send("g91")
 
@@ -46,6 +49,17 @@ class motion():
                                    args=(self.pos_queue,))
 
         self.serial_proc.start()
+
+    def update_feedrate(self, feedrate):
+        tmp = self.feedrate + feedrate
+        if(tmp >= 100) and (tmp <= 800):
+            self.feedrate = tmp
+            # feedrate speed
+            self.send("f"+str(self.feedrate))
+
+    def update_interval(self, interval):
+        if(self.interval >= 1) and (self.interval <= 10):
+            self.interval += interval
  
     def send(self, cmd): 
         print 'Sending: ' + cmd
@@ -131,9 +145,12 @@ class motion():
                         break
 
                 if(self.mode == 'delay'):
-                    time.sleep(2)
+                    time.sleep(self.interval)
                 elif(self.mode == 'sensor'):
-                    while(not self.getTrigger()):
-                        time.sleep(.01)
+                    num_strikes = 0
+                    while num_strikes < self.interval:
+                        while(not self.getTrigger()):
+                            time.sleep(.01)
+                        num_strikes += 1
         # relative mode 
         self.send("g91")
