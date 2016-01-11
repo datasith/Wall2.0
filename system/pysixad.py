@@ -42,6 +42,8 @@ class pysixad:
     joystick_count=0
     numaxes=0
     numbuttons=0
+    discon = False
+    clock = pygame.time.Clock()
     #left=right=up=down=l1=l2=r1=r2=triangle=circle=square=cross=select=start=ps=joystick_left=joystick_right=0
     #a_left=a_right=a_up=a_down=a_l1=a_l2=a_r1=a_r2=a_triangle=a_circle=a_square=a_cross=a_select=a_start=a_ps=a_joystick_left_x=a_joystick_left_y=a_joystick_right_x=a_joystick_right_y=acc_x=acc_y=acc_z=gyro_yaw=0
     
@@ -50,15 +52,31 @@ class pysixad:
         #Make the stdout buffer as 0,because of bug in Pygame which keeps on printing debug statements
         #http://stackoverflow.com/questions/107705/python-output-buffering
         sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-        
-        pygame.init()
+
+    def check_pad(self):
+        pygame.joystick.quit()
         pygame.joystick.init()
-        pysixad.joystick = pygame.joystick.Joystick(0)
-        pysixad.joystick.init()
         pysixad.joystick_count = pygame.joystick.get_count()
-        pysixad.numaxes = pysixad.joystick.get_numaxes()
-        pysixad.numbuttons = pysixad.joystick.get_numbuttons()
-        # get count of joysticks=1, axes=27, buttons=19 for DualShock 3
+        for i in range(pysixad.joystick_count):
+            pysixad.joystick = pygame.joystick.Joystick(i)
+            pysixad.joystick.init()
+        if not pysixad.joystick_count: 
+            if not pysixad.discon:
+               print "reconnect you meat bag"
+               pysixad.discon = True
+            pysixad.clock.tick(20)
+            self.check_pad()
+        else:
+            pysixad.discon = False
+
+    def initialize(self):
+        try:
+            pygame.init()
+            pysixad.numaxes = pysixad.joystick.get_numaxes()
+            pysixad.numbuttons = pysixad.joystick.get_numbuttons()
+            # get count of joysticks=1, axes=27, buttons=19 for DualShock 3
+        except pygame.error:
+            raise IOError
     
     #Update the button values
     def update(self):

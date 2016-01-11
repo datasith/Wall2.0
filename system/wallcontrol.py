@@ -1,10 +1,24 @@
+#!/usr/bin/env python
 from pysixad import *      #Import the PS3 library
 from motion import *
-import sys
+import sys, time
 
 print "Initializing"
-p=pysixad()    #Create a PS3 object
+
+while True:
+    try:
+        p=pysixad()
+        p.check_pad()
+    except OSError:
+        continue
+        sys.exit()
+    except IOError:
+        continue
+        sys.exit()
+    break
+p.initialize()
 m=motion()
+
 print "Done"
 
 isMoving = False
