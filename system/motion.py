@@ -5,6 +5,7 @@ Simple g-code streaming script for grbl
  
 import serial
 import time
+import csv
 import json
 import RPi.GPIO as GPIO
 from multiprocessing import Process, Queue
@@ -20,7 +21,8 @@ class motion():
         self.rsp=''
         self.posx=0.0
         self.posy=0.0
-        self.positions_file = 'positions.csv'
+        self.positions_file = '/home/pi/Work/Wall2.0/system/positions.csv'
+        self.home_position_file = '/home/pi/Work/Wall2.0/system/home.csv'
         self.mode = 'delay'
         self.sensor_pin = 3
         self.interval = 1
@@ -32,17 +34,27 @@ class motion():
         self.s.write("\r\n\r\n")
         time.sleep(2)   # Wait for grbl to initialize
         self.s.flushInput()  # Flush startup text in serial input        
-        # set origin offset
-        self.send("g92 x0 y0")
 
         self.feedrate = 100
         self.update_feedrate(0)
 
-        # relative mode 
-        self.send("g91")
-
         with open(self.positions_file,'w') as f:
             f.write('posx,posy\n')
+
+        self.homex=None
+        self.homey=None
+        with open(self.home_position_file,'r') as f:
+            lines = csv.DictReader(f)
+            for l in lines:
+                print 'x_home: '+l['homex']
+                print 'y_home: '+l['homey']
+                self.homex = float(l['homex'])
+                self.homey = float(l['homey'])
+
+        # set origin offset
+        #self.send("g92 x0 y0")
+
+        self.set_relative_position()
 
         self.pos_queue = Queue()
         self.serial_proc = Process(target=self.get_response,
@@ -71,9 +83,20 @@ class motion():
         #self.send("%")
         self.send(" ".join(["g1",x,y]))
 
+    def move_to_position(self,x,y):
+        x = "x"+str(x)    
+        y = "y"+str(y)    
+        self.send(" ".join(["g1",x,y]))
+
     def stop(self):
         self.send("!")
         self.send("%")
+        if (self.homex!=None) and (self.homey!=None):
+            time.sleep(0.5)
+            self.set_absolute_position()
+            self.update_current_position()
+            self.move_to_position(self.homex,self.homey)
+            self.set_relative_position()
 
     def disconnect(self):
         # Close file and serial port
@@ -84,18 +107,23 @@ class motion():
             tmp = self.s.readline()
             tmp = tmp.strip()
             if tmp is not '':
-                tmp = json.loads(tmp)
-                print tmp
-                if 'r' in tmp.keys():
-                    if 'sr' in tmp['r'].keys():
-                        tmp = tmp['r']
-                if 'sr' in tmp.keys():
-                    if 'posx' in tmp['sr'].keys():
-                        self.posx=tmp['sr']['posx']
-                    if 'posy' in tmp['sr'].keys():
-                        self.posy=tmp['sr']['posy']
-                    q.put((self.posx, self.posy))
-                    print 'pos1: '+str((self.posx, self.posy))
+                try:
+                    tmp = json.loads(tmp)
+                    print tmp
+                    if 'r' in tmp.keys():
+                        if 'sr' in tmp['r'].keys():
+                            tmp = tmp['r']
+                    if 'sr' in tmp.keys():
+                        if 'posx' in tmp['sr'].keys():
+                            self.posx=tmp['sr']['posx']
+                        if 'posy' in tmp['sr'].keys():
+                            self.posy=tmp['sr']['posy']
+                        q.put((self.posx, self.posy))
+                        print 'pos1: '+str((self.posx, self.posy))
+                except ValueError:
+                    print "get_response chocked"
+                    self.stop()
+                    time.sleep(1)
             else:
                 time.sleep(.2)
 
@@ -106,6 +134,24 @@ class motion():
         self.update_current_position()
         with open(self.positions_file,'a') as f:
             f.write(str(self.posx)+','+str(self.posy)+'\n')
+
+    def record_home_position(self):
+        self.send('{"sr":null}')
+        print "Saving home"
+        # TODO: Check if serial_proc is running?
+        self.update_current_position()
+        self.homex = self.posx
+        self.homey = self.posy
+        with open(self.home_position_file,'w') as f:
+            f.write('homex,homey\n')
+            f.write(str(self.posx)+','+str(self.posy)+'\n')
+
+    def delete_home_position(self):
+        print "Deleting home"
+        with open(self.home_position_file,'w') as f:
+            f.write('homex,homey\n')
+        self.homex = None
+        self.homey = None
 
     def update_current_position(self):
         while not self.pos_queue.empty():
@@ -120,10 +166,16 @@ class motion():
         elif self.mode == 'sensor':
             self.mode = 'delay'
 
-    def playback_saved_positions(self):
+    def set_absolute_position(self):
         # absolute mode 
         self.send("g90")
-        import csv,time
+
+    def set_relative_position(self):
+        # relative mode 
+        self.send("g91")
+
+    def playback_saved_positions(self):
+        self.set_absolute_position()
         self.update_current_position()
         with open(self.positions_file) as f:
             lines = csv.DictReader(f)

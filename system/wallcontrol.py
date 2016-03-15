@@ -29,6 +29,8 @@ isIncSpeed = False
 isDecSpeed = False
 isIncInterval = False
 isDecInterval = False
+isRecordingHome = False
+isDeletingHome = False
 
 while True:
     p.update()
@@ -54,6 +56,10 @@ while True:
         isIncInterval = True
     elif ( p.left ):
         isDecInterval = True
+    elif ( p.r1 ):
+        isRecordingHome = True
+    elif ( p.l1 ):
+        isDeletingHome = True
     else:
         if isMoving:
             m.stop()
@@ -79,3 +85,9 @@ while True:
         if isDecInterval:
             m.update_interval(-1)
             isDecInterval = False
+        if isRecordingHome:
+            m.record_home_position()
+            isRecordingHome = False
+        if isDeletingHome:
+            m.delete_home_position()
+            isDeletingHome = False
